@@ -1,0 +1,127 @@
+[
+  {
+    "question": "What keyword defines a function in Python?",
+    "answer": ["def", "defines"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What data type is True or False?",
+    "answer": ["bool", "boolean"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What does print() do?",
+    "answer": ["display output", "shows output", "prints output"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What symbol is used for comments in Python?",
+    "answer": ["#"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What function gives the length of a list?",
+    "answer": ["len", "len()"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What data type is 5?",
+    "answer": ["int", "integer"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What data type is 3.14?",
+    "answer": ["float"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What keyword is used for loops?",
+    "answer": ["for", "while"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What keyword is used for conditions?",
+    "answer": ["if"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is used to store multiple values in one variable?",
+    "answer": ["list"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What symbol is used for exponentiation?",
+    "answer": ["**"],
+    "difficulty": "medium"
+  },
+  {
+    "question": "What does == mean?",
+    "answer": ["equal", "is equal", "comparison"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What does != mean?",
+    "answer": ["not equal"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What keyword is used to return a value?",
+    "answer": ["return"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What structure uses key-value pairs?",
+    "answer": ["dictionary", "dict"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What is the index of the first item in a list?",
+    "answer": ["0", "zero"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What method adds an item to a list?",
+    "answer": ["append", "append()"],
+    "difficulty": "medium"
+  },
+  {
+    "question": "What keyword handles exceptions?",
+    "answer": ["try"],
+    "difficulty": "medium"
+  },
+  {
+    "question": "What keyword follows try for errors?",
+    "answer": ["except"],
+    "difficulty": "medium"
+  },
+  {
+    "question": "What does str() do?",
+    "answer": ["convert to string", "string conversion"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What does int() do?",
+    "answer": ["convert to integer", "integer conversion"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What loop runs while a condition is true?",
+    "answer": ["while"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What keyword stops a loop?",
+    "answer": ["break"],
+    "difficulty": "easy"
+  },
+  {
+    "question": "What keyword skips to next loop iteration?",
+    "answer": ["continue"],
+    "difficulty": "medium"
+  },
+  {
+    "question": "What does input() do?",
+    "answer": ["get user input", "takes input"],
+    "difficulty": "easy"
+  }
+]
