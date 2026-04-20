@@ -134,7 +134,7 @@ def run_mcq(questions):
 
         try:
             choice = int(input("\nChoose (1–{}): ".format(len(options))).strip())
-            if not 1 ≤ choice ≤ len(options):
+            if not 1 <= choice <= len(options):
                 raise ValueError("Out of range")
             user_answer = options[choice - 1]
         except (ValueError, IndexError):
@@ -163,7 +163,7 @@ def run_mcq(questions):
 # -------------------------
 
 def save_report(score, total, wrong, topic, difficulty, mode, weak_topics):
-    desktop = Path.home() / "Desktop"
+    desktop = BASE_DIR / "reports"
     folder = desktop / "Master test results" / topic / difficulty
     folder.mkdir(parents=True, exist_ok=True)
 
