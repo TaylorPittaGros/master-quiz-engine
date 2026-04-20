@@ -3,13 +3,11 @@ import random
 import datetime
 from pathlib import Path
 
-
 # -------------------------
 # 📁 BASE DIRECTORY
 # -------------------------
 
 BASE_DIR = Path(__file__).parent
-
 
 # -------------------------
 # 📦 LOAD QUESTIONS
@@ -97,7 +95,7 @@ def run_quiz(questions):
 
 def run_mcq(questions):
     if len(questions) < 2:
-        print("⚠️ Not enough questions to generate MCQs (need ≥2). Falling back to normal quiz.")
+        print("⚠️ Not enough questions to generate MCQs (need >=2). Falling back to normal quiz.")
         return run_quiz(questions)
 
     score = 0
@@ -118,7 +116,7 @@ def run_mcq(questions):
         # Remove the correct answer itself
         all_other_answers.discard(correct.lower())
 
-        # Pick up to 3 unique wrong answers (ensure ≥1 distractor)
+        # Pick up to 3 unique wrong answers (ensure >=1 distractor)
         distractors = random.sample(list(all_other_answers), min(3, max(0, len(all_other_answers))))
         options = [correct] + [a.strip() for a in distractors]
 
@@ -196,7 +194,30 @@ def save_report(score, total, wrong, topic, difficulty, mode, weak_topics):
 
     print(f"📄 Report saved: {file_name}")
     return file_name
+def save_progress(topic, score, total):
+    progress_file = BASE_DIR / "progress.json"
 
+    data = {"sessions": []}
+
+    if progress_file.exists():
+        try:
+            with open(progress_file, "r") as f:
+                data = json.load(f)
+        except:
+            pass
+
+    entry = {
+        "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "topic": topic,
+        "score": score,
+        "total": total,
+        "accuracy": round((score / total) * 100, 2) if total else 0
+    }
+
+    data["sessions"].append(entry)
+
+    with open(progress_file, "w") as f:
+        json.dump(data, f, indent=4)
 
 # -------------------------
 # 🚀 MAIN MENU
@@ -211,8 +232,8 @@ def main():
 
     topic = input("\nChoose topic: ").strip().lower()
     difficulty = input("Difficulty (easy / medium / hard / all): ").strip().lower()
-    language = input("Language (python / java / all): ").strip().lower()
-    size = int(input("Test size (e.g., 10/25/50): "))
+    
+    size = int(input("Test size (e.g., 10/25/50/100): "))
     mode_input = input("Mode (1 = normal / 2 = MCQ): ")
 
     # Validate & map mode
@@ -228,7 +249,7 @@ def main():
         print("❌ No questions loaded. Exiting.")
         return
 
-    filtered = filter_questions(questions, difficulty, language)
+    filtered = filter_questions(questions, difficulty, "all")
     test = select_questions(filtered, min(size, len(filtered)))
 
     if not test:
@@ -250,7 +271,8 @@ def main():
 
     # Save report
     save_report(score, total, wrong, topic, difficulty, mode, weak_topics)
-
+    save_progress(topic, score, total)
+    show_progress()
 
 if __name__ == "__main__":
     main()
