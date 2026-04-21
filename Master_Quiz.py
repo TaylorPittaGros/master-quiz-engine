@@ -6,13 +6,11 @@ from pathlib import Path
 # -------------------------
 # 📁 BASE DIRECTORY
 # -------------------------
-
 BASE_DIR = Path(__file__).parent
 
 # -------------------------
 # 📦 LOAD QUESTIONS
 # -------------------------
-
 def load_questions(file_path):
     try:
         with open(file_path, "r", encoding="utf-8") as file:
@@ -21,109 +19,79 @@ def load_questions(file_path):
         print(f"❌ File not found: {file_path}")
         return []
     except json.JSONDecodeError as e:
-        print(f"❌ JSON error in {file_path}: {e}")
+        print(f"❌ JSON error: {e}")
         return []
-
 
 # -------------------------
 # 📁 GET TOPIC PATH
 # -------------------------
-
 def get_topic_path(topic):
     return BASE_DIR / topic / "questions.json"
-
 
 # -------------------------
 # 🎯 FILTER QUESTIONS
 # -------------------------
-
-def filter_questions(questions, difficulty, language):
-    filtered = questions
-
-    if difficulty != "all":
-        filtered = [q for q in filtered if q.get("difficulty", "").lower() == difficulty]
-
-    if language != "all":
-        filtered = [q for q in filtered if q.get("language", "python").lower() == language]
-
-    return filtered
-
+def filter_questions(questions, difficulty):
+    if difficulty == "all":
+        return questions
+    return [q for q in questions if q.get("difficulty", "").lower() == difficulty]
 
 # -------------------------
 # 🎲 SELECT QUESTIONS
 # -------------------------
-
 def select_questions(questions, amount):
     return random.sample(questions, min(amount, len(questions)))
-
 
 # -------------------------
 # 🎮 NORMAL QUIZ
 # -------------------------
-
 def run_quiz(questions):
     score = 0
-    streak = 0
     wrong = []
     weak_topics = {}
 
     for i, q in enumerate(questions, 1):
         print(f"\nQ{i}: {q['question']}")
-        user = input("Your answer: ").strip()
+        user = input("Your answer: ").strip().lower()
 
-        answers = [a.lower().strip() for a in q.get("answer", [])]
-        user_clean = user.lower()
+        answers = [a.lower() for a in q.get("answer", [])]
 
-        if user_clean in answers:
-            print("✅ Correct\n")
+        if user in answers:
+            print("✅ Correct")
             score += 1
-            streak += 1
-            print(f"🔥 Streak: {streak}\n")
         else:
-            print(f"❌ Wrong (Accepted answers: {', '.join(q.get('answer', []))})\n")
-            streak = 0
+            print(f"❌ Wrong (Correct: {', '.join(q['answer'])})")
             wrong.append(q)
+
             topic = q.get("topic", "unknown")
             weak_topics[topic] = weak_topics.get(topic, 0) + 1
 
     return score, wrong, weak_topics
 
-
 # -------------------------
-# 🎯 MULTIPLE CHOICE QUIZ (FIXED)
+# 🎯 MCQ QUIZ
 # -------------------------
-
 def run_mcq(questions):
     if len(questions) < 2:
-        print("⚠️ Not enough questions to generate MCQs (need >=2). Falling back to normal quiz.")
         return run_quiz(questions)
 
     score = 0
-    streak = 0
     wrong = []
     weak_topics = {}
 
     for i, q in enumerate(questions, 1):
         correct = q["answer"][0]
-        # Create *unique* distractors: use other questions’ first answers (excluding duplicates)
-        all_other_answers = set()
+
+        pool = set()
         for item in questions:
             if item != q:
                 for ans in item.get("answer", []):
-                    ans_clean = ans.strip().lower()
-                    all_other_answers.add(ans_clean)
+                    pool.add(ans.lower())
 
-        # Remove the correct answer itself
-        all_other_answers.discard(correct.lower())
+        pool.discard(correct.lower())
+        distractors = random.sample(list(pool), min(3, len(pool)))
 
-        # Pick up to 3 unique wrong answers (ensure >=1 distractor)
-        distractors = random.sample(list(all_other_answers), min(3, max(0, len(all_other_answers))))
-        options = [correct] + [a.strip() for a in distractors]
-
-        if len(options) < 2:
-            print("⚠️ Not enough unique answer options. Skipping this question.")
-            continue
-
+        options = [correct] + distractors
         random.shuffle(options)
 
         print(f"\nQ{i}: {q['question']}")
@@ -131,146 +99,117 @@ def run_mcq(questions):
             print(f"{idx}. {opt}")
 
         try:
-            choice = int(input("\nChoose (1–{}): ".format(len(options))).strip())
-            if not 1 <= choice <= len(options):
-                raise ValueError("Out of range")
+            choice = int(input("Choose: "))
             user_answer = options[choice - 1]
-        except (ValueError, IndexError):
-            print("❌ Invalid input. Skipping question.\n")
-            streak = 0
+        except:
+            print("❌ Invalid input")
             wrong.append(q)
             continue
 
         if user_answer.lower() == correct.lower():
-            print("✅ Correct\n")
+            print("✅ Correct")
             score += 1
-            streak += 1
-            print(f"🔥 Streak: {streak}\n")
         else:
-            print(f"❌ Wrong (Correct: {correct})\n")
-            streak = 0
+            print(f"❌ Wrong (Correct: {correct})")
             wrong.append(q)
+
             topic = q.get("topic", "unknown")
             weak_topics[topic] = weak_topics.get(topic, 0) + 1
 
     return score, wrong, weak_topics
 
+# -------------------------
+# 📄 SAVE REPORT
+# -------------------------
+def save_report(score, total, topic):
+    folder = BASE_DIR / "reports"
+    folder.mkdir(exist_ok=True)
+
+    file_name = folder / "results.txt"
+
+    with open(file_name, "a", encoding="utf-8") as f:
+        f.write(f"{datetime.datetime.now()} | {topic} | {score}/{total}\n")
 
 # -------------------------
-# 📄 SAVE REPORT (FIXED DUPLICATE)
+# 📊 SAVE PROGRESS
 # -------------------------
-
-def save_report(score, total, wrong, topic, difficulty, mode, weak_topics):
-    desktop = BASE_DIR / "reports"
-    folder = desktop / "Master test results" / topic / difficulty
-    folder.mkdir(parents=True, exist_ok=True)
-
-    percentage = (score / total) * 100 if total > 0 else 0
-
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_name = folder / f"{mode}_result_{timestamp}.txt"
-
-    with open(file_name, "w", encoding="utf-8") as f:
-        f.write("QUIZ REPORT\n")
-        f.write("=" * 40 + "\n")
-        f.write(f"Mode: {mode}\n")
-        f.write(f"Topic: {topic}\n")
-        f.write(f"Difficulty: {difficulty}\n")
-        f.write(f"Score: {score}/{total}\n")
-        f.write(f"Percentage: {percentage:.2f}%\n\n")
-
-        if wrong:
-            f.write("WRONG ANSWERS:\n")
-            for w in wrong:
-                f.write("-" * 40 + "\n")
-                f.write(f"Q: {w['question']}\n")
-                f.write(f"Correct answer(s): {', '.join(w.get('answer', []))}\n")
-                f.write(f"Topic: {w.get('topic', 'N/A')}\n\n")
-
-        if weak_topics:
-            f.write("WEAK TOPICS:\n")
-            for t, c in sorted(weak_topics.items(), key=lambda x: -x[1]):
-                f.write(f"- {t}: {c} mistake(s)\n")
-
-    print(f"📄 Report saved: {file_name}")
-    return file_name
 def save_progress(topic, score, total):
-    progress_file = BASE_DIR / "progress.json"
+    file = BASE_DIR / "progress.json"
 
     data = {"sessions": []}
+    if file.exists():
+        with open(file, "r") as f:
+            data = json.load(f)
 
-    if progress_file.exists():
-        try:
-            with open(progress_file, "r") as f:
-                data = json.load(f)
-        except:
-            pass
-
-    entry = {
-        "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+    data["sessions"].append({
+        "date": str(datetime.datetime.now()),
         "topic": topic,
         "score": score,
-        "total": total,
-        "accuracy": round((score / total) * 100, 2) if total else 0
-    }
+        "total": total
+    })
 
-    data["sessions"].append(entry)
-
-    with open(progress_file, "w") as f:
+    with open(file, "w") as f:
         json.dump(data, f, indent=4)
 
 # -------------------------
-# 🚀 MAIN MENU
+# 📊 SHOW PROGRESS
 # -------------------------
+def show_progress():
+    file = BASE_DIR / "progress.json"
 
+    if not file.exists():
+        print("No progress yet")
+        return
+
+    with open(file, "r") as f:
+        data = json.load(f)
+
+    print("\n📊 Last sessions:")
+    for s in data["sessions"][-5:]:
+        print(s)
+
+# -------------------------
+# 🚀 MAIN
+# -------------------------
 def main():
-    print("🎮 MASTER QUIZ ENGINE\n")
-    print("Available topics:")
-    dirs = [d.name for d in BASE_DIR.iterdir() if d.is_dir()]
-    for d in sorted(dirs):
-        print(f"- {d}")
+    print("🎮 QUIZ ENGINE")
 
-    topic = input("\nChoose topic: ").strip().lower()
-    difficulty = input("Difficulty (easy / medium / hard / all): ").strip().lower()
-    
-    size = int(input("Test size (e.g., 10/25/50/100): "))
-    mode_input = input("Mode (1 = normal / 2 = MCQ): ")
+    topics = [d.name for d in BASE_DIR.iterdir() if d.is_dir()]
+    print("Topics:", topics)
 
-    # Validate & map mode
-    if mode_input == "2":
-        mode, run_func = "mcq", run_mcq
+    while True:
+        topic = input("Choose topic: ")
+        if topic in topics:
+            break
+        print("Invalid topic")
+
+    difficulty = input("Difficulty (easy/medium/hard/all): ").lower()
+
+    while True:
+        try:
+            size = int(input("Size (10/25/50/100): "))
+            if size in [10, 25, 50, 100]:
+                break
+        except:
+            pass
+        print("Invalid size")
+
+    mode = input("Mode (1=normal,2=mcq): ")
+
+    questions = load_questions(get_topic_path(topic))
+    filtered = filter_questions(questions, difficulty)
+    test = select_questions(filtered, size)
+
+    if mode == "2":
+        score, wrong, weak = run_mcq(test)
     else:
-        mode, run_func = "normal", run_quiz
+        score, wrong, weak = run_quiz(test)
 
-    path = get_topic_path(topic)
-    questions = load_questions(path)
-
-    if not questions:
-        print("❌ No questions loaded. Exiting.")
-        return
-
-    filtered = filter_questions(questions, difficulty, "all")
-    test = select_questions(filtered, min(size, len(filtered)))
-
-    if not test:
-        print("❌ No questions matched your filters.")
-        return
-
-    score, wrong, weak_topics = run_func(test)
-
-    # Final output
     total = len(test)
-    print("\n🏆 FINAL SCORE:", f"{score}/{total}")
-    percentage = (score / total) * 100
-    print(f"✅ Accuracy: {percentage:.1f}%")
 
-    if weak_topics:
-        print("\n🔍 Weak areas (by mistakes):")
-        for t, c in sorted(weak_topics.items(), key=lambda x: -x[1]):
-            print(f" - {t}: {c}")
+    print(f"\nScore: {score}/{total}")
 
-    # Save report
-    save_report(score, total, wrong, topic, difficulty, mode, weak_topics)
+    save_report(score, total, topic)
     save_progress(topic, score, total)
     show_progress()
 
