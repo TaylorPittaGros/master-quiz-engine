@@ -16,29 +16,18 @@ BASE_DIR = Path(__file__).parent
 def normalize(text):
     text = text.lower().strip()
 
-    # 🔢 word → number
     word_to_number = {
-        "zero": "0",
-        "one": "1",
-        "two": "2",
-        "three": "3",
-        "four": "4",
-        "five": "5",
-        "six": "6",
-        "seven": "7"
+        "zero": "0", "one": "1", "two": "2", "three": "3",
+        "four": "4", "five": "5", "six": "6", "seven": "7"
     }
 
-    # 🔁 synonyms
     synonyms = {
         "boolean": "bool",
         "integer": "int"
     }
 
-    if text in word_to_number:
-        text = word_to_number[text]
-
-    if text in synonyms:
-        text = synonyms[text]
+    text = word_to_number.get(text, text)
+    text = synonyms.get(text, text)
 
     return text
 
@@ -90,11 +79,13 @@ def run_quiz(questions):
     wrong = []
     weak_topics = {}
 
-    for i, q in enumerate(questions, 1):
-        print(f"\n📘 Q{i}/{len(questions)}: {q['question']}")
-        user = input("Your answer: ")
+    i = 0
+    while i < len(questions):
+        q = questions[i]
 
-        user = normalize(user)
+        print(f"\n📘 Q{i+1}/{len(questions)}: {q['question']}")
+        user = normalize(input("Your answer: "))
+
         answers = [normalize(a) for a in q.get("answer", [])]
 
         if user in answers:
@@ -105,14 +96,24 @@ def run_quiz(questions):
         else:
             print(f"❌ Wrong (Accepted: {', '.join(q.get('answer', []))})")
 
-            print("💡 Type the correct answer once before continuing:")
-            input("> ")
+            # 🔥 FORCE CORRECT ANSWER
+            print("💡 Type the correct answer to continue:")
+            while True:
+                retry_input = normalize(input("> "))
+                if retry_input in answers:
+                    break
+                print("❌ Try again.")
 
             streak = 0
             wrong.append(q)
 
             topic = q.get("topic", "unknown")
             weak_topics[topic] = weak_topics.get(topic, 0) + 1
+
+            # 🔁 OPTIONAL: repeat later
+            questions.append(q)
+
+        i += 1
 
     return score, wrong, weak_topics
 
@@ -131,15 +132,15 @@ def run_mcq(questions):
     weak_topics = {}
 
     for i, q in enumerate(questions, 1):
-        correct = q["answer"][0]
+        correct = normalize(q["answer"][0])
 
         pool = set()
         for item in questions:
             if item != q:
                 for ans in item.get("answer", []):
-                    pool.add(ans.lower())
+                    pool.add(normalize(ans))
 
-        pool.discard(correct.lower())
+        pool.discard(correct)
         distractors = random.sample(list(pool), min(3, len(pool)))
 
         options = [correct] + distractors
@@ -154,22 +155,26 @@ def run_mcq(questions):
             if not 1 <= choice <= len(options):
                 raise ValueError
             user_answer = options[choice - 1]
-        except:
+        except (ValueError, IndexError):
             print("❌ Invalid input")
             wrong.append(q)
             streak = 0
             continue
 
-        # 🔥 normalize here too
-        if normalize(user_answer) == normalize(correct):
+        if normalize(user_answer) == correct:
             print("✅ Correct")
             score += 1
             streak += 1
             print(f"🔥 Streak: {streak}")
         else:
             print(f"❌ Wrong (Correct: {correct})")
-            print("💡 Say the correct answer out loud before continuing.")
-            input("> ")
+
+            print("💡 Type the correct answer:")
+            while True:
+                retry_input = normalize(input("> "))
+                if retry_input == correct:
+                    break
+                print("❌ Try again.")
 
             streak = 0
             wrong.append(q)
@@ -209,7 +214,7 @@ def save_report(score, total, wrong, topic, difficulty, mode, weak_topics):
     print(f"📄 Saved: {file_name}")
 
 # -------------------------
-# 🧠 RETRY SYSTEM
+# 🧠 RETRY WRONG
 # -------------------------
 
 def retry_wrong_questions(wrong):
@@ -255,9 +260,13 @@ def main():
     for t in topics:
         print("-", t)
 
+    # ✅ case-safe topic selection
+    topic_map = {t.lower(): t for t in topics}
+
     while True:
-        topic = input("\nChoose topic: ").strip()
-        if topic in topics:
+        topic_input = input("\nChoose topic: ").strip().lower()
+        if topic_input in topic_map:
+            topic = topic_map[topic_input]
             break
         print("❌ Invalid topic.")
 
