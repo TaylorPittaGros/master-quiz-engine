@@ -1,0 +1,14 @@
+[
+  {
+    "question": "What is 2 + 2?",
+    "answer": ["4", "four"]
+  },
+  {
+    "question": "What type is True?",
+    "answer": ["bool", "boolean"]
+  }
+  {
+    "question": "question",
+    "answer": ["answer", "Lit"],
+  }
+]
